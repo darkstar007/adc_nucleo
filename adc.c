@@ -25,25 +25,6 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/gpio.h>
 
-#define LBLUE GPIOE, GPIO8
-#define LRED GPIOE, GPIO9
-#define LORANGE GPIOE, GPIO10
-#define LGREEN GPIOE, GPIO11
-#define LBLUE2 GPIOE, GPIO12
-#define LRED2 GPIOE, GPIO13
-#define LORANGE2 GPIOE, GPIO14
-#define LGREEN2 GPIOE, GPIO15
-
-#define LD4 GPIOE, GPIO8
-#define LD3 GPIOE, GPIO9
-#define LD5 GPIOE, GPIO10
-#define LD7 GPIOE, GPIO11
-#define LD9 GPIOE, GPIO12
-#define LD10 GPIOE, GPIO13
-#define LD8 GPIOE, GPIO14
-#define LD6 GPIOE, GPIO15
-
-
 static void adc_setup(void)
 {
 	//ADC

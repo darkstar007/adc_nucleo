@@ -119,7 +119,7 @@ static void clock_setup(void)
 }
 
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	uint16_t temp;
 

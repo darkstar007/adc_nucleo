@@ -79,10 +79,13 @@ static void usart_setup(void)
 
 static void gpio_setup(void)
 {
-	rcc_periph_clock_enable(RCC_GPIOE);
-	gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
-		GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
-		GPIO14 | GPIO15);
+//	rcc_periph_clock_enable(RCC_GPIOE);
+//	gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+//		GPIO8 | GPIO9 | GPIO10 | GPIO11 | GPIO12 | GPIO13 |
+//		GPIO14 | GPIO15);
+
+	rcc_periph_clock_enable(RCC_GPIOA);
+	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
 }
 
 static void my_usart_print_int(uint32_t usart, int16_t value)
@@ -122,12 +125,21 @@ static void clock_setup(void)
 int main(int argc, char *argv[])
 {
 	uint16_t temp;
+	int i;
 
-	clock_setup();
+	//clock_setup();
 	gpio_setup();
-	adc_setup();
-	usart_setup();
+	//adc_setup();
+	//usart_setup();
+	
+	while (1) {
+		/* Using API function gpio_toggle(): */
+		gpio_toggle(GPIOA, GPIO5);	/* LED on/off */
+		for (i = 0; i < 2000000; i++) /* Wait a bit. */
+			__asm__("nop");
 
+	}
+#ifdef DO_ADC
 	while (1) {
 		adc_start_conversion_regular(ADC1);
 		while (!(adc_eoc(ADC1)));
@@ -135,6 +147,7 @@ int main(int argc, char *argv[])
  		gpio_port_write(GPIOE, temp << 4);
 		my_usart_print_int(USART2, temp);
 	}
+#endif
 
 	return 0;
 }

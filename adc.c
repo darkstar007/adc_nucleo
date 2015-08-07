@@ -57,13 +57,17 @@ static void adc_setup(void)
 
 static void usart_setup(void)
 {
-	/* Enable clocks for GPIO port A (for GPIO_USART2_TX) and USART2. */
-	rcc_periph_clock_enable(RCC_USART2);
+	/* Enable GPIOD clock for LED & USARTs. */
 	rcc_periph_clock_enable(RCC_GPIOA);
 
-	/* Setup GPIO pin GPIO_USART2_TX/GPIO9 on GPIO port A for transmit. */
+	/* Enable clocks for USART2. */
+	rcc_periph_clock_enable(RCC_USART2);
+
+	/* Setup GPIO pins for USART2 transmit and receive. */
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2 | GPIO3);
-	gpio_set_af(GPIOA, GPIO_AF7, GPIO2| GPIO3);
+
+	/* Setup USART2 TX pin as alternate function. */
+	gpio_set_af(GPIOA, GPIO_AF7, GPIO2 | GPIO3);
 
 	/* Setup UART parameters. */
 	usart_set_baudrate(USART2, 115200);
@@ -124,19 +128,21 @@ static void clock_setup(void)
 
 int main(int argc, char *argv[])
 {
-	uint16_t temp;
+	uint16_t temp = 0;
 	int i;
 
 	//clock_setup();
 	gpio_setup();
 	//adc_setup();
-	//usart_setup();
+	usart_setup();
 	
 	while (1) {
 		/* Using API function gpio_toggle(): */
 		gpio_toggle(GPIOA, GPIO5);	/* LED on/off */
-		for (i = 0; i < 2000000; i++) /* Wait a bit. */
+		for (i = 0; i < 1000000; i++) /* Wait a bit. */
 			__asm__("nop");
+		my_usart_print_int(USART2, temp);
+		temp++;
 
 	}
 #ifdef DO_ADC

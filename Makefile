@@ -7,4 +7,4 @@ OOCD_BOARD = st_nucleo_f3
 V=1
 
 include  libopencm3.target.mk
-include  libopencm3.rules.mk
+

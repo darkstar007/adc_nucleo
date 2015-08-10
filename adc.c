@@ -47,8 +47,6 @@ void tim1_cc_isr(void)
      }
 }
 
-
-
 static void tim1_setup_input_capture(void)
 {
      // Enable clock for Timer 1.
@@ -207,18 +205,58 @@ static void clock_setup(void)
      rcc_clock_setup_hsi(&hsi_8mhz[CLOCK_64MHZ]);
 }
 
+void tim3_isr(void)
+{
+     if (timer_get_flag(TIM3, TIM_SR_CC1IF) != 0) {
+	  timer_clear_flag(TIM3, TIM_SR_CC1IF);
+     
+	  gpio_toggle(GPIOA, GPIO5);	/* LED on/off */
+	  my_usart_print_vals(USART2, total);
+	  usart_send_blocking(USART2, ',');
+	  my_usart_print_vals(USART2, count);
+	  count=0;
+	  //total=0;
+	  usart_send_blocking(USART2, '\r');
+	  usart_send_blocking(USART2, '\n');
+     }
+
+}
+static void tim3_1s(void)
+{
+     // Enable clock for Timer 3.
+     rcc_periph_clock_enable(RCC_TIM3);
+     
+     // Enable interrupts for TIM3 CC.	
+     nvic_enable_irq        (NVIC_TIM3_IRQ);
+     
+     timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT,
+		    TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+
+     
+     timer_set_prescaler     (TIM3, 6400-1);  // Counter unit = 100 us.
+     timer_set_period        (TIM3, 10000);
+     timer_set_repetition_counter(TIM3, 0);
+     timer_continuous_mode   (TIM3);
+     
+     timer_clear_flag       (TIM3, TIM_SR_CC1IF);
+     timer_enable_irq       (TIM3, TIM_DIER_CC1IE);
+     
+     timer_enable_counter   (TIM3);
+
+}
 
 int main(int argc, char *argv[])
 {
      
      int i;
      
-     //clock_setup();
+     clock_setup();
      gpio_setup();
      adc_setup();
      usart_setup();
      tim1_setup_input_capture();
-     
+     tim3_1s();
+
 #ifdef ADC
      uint16_t temp = 0;	
      while (1) {
@@ -229,7 +267,6 @@ int main(int argc, char *argv[])
 	  //gpio_port_write(GPIOE, temp << 4);
 	  my_usart_print_int(USART2, temp);
      }
-#endif
      
      while (1) {
 	  gpio_toggle(GPIOA, GPIO5);	/* LED on/off */
@@ -243,7 +280,11 @@ int main(int argc, char *argv[])
 	  usart_send_blocking(USART2, '\r');
 	  usart_send_blocking(USART2, '\n');
      }
-		
+#endif
+
+     while (1) {
+     }
+
      return 0;
 }
 

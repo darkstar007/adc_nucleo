@@ -32,8 +32,14 @@ fp = serial.Serial(sport, 115200, timeout=4)
 now = datetime.datetime.now()
 fp_out = open('magsensor_'+now.strftime('%Y%m%d_%H%M%S')+'.txt', 'w')
 
+# Dump whats in the buffer both locally and on microcontroller
+fp.flushInput()
+for x in xrange(40):
+    ln = fp.readline()
+    print ln
+
 while True:
     ln = fp.readline()
     now = datetime.datetime.now()
-    fp_out.write(now.strftime('%Y,%m,%d,%H,%M,%S.%f,')+ln)
-
+    fp_out.write(now.strftime('%Y/%m/%d %H:%M:%S.%f,')+ln)
+    fp_out.flush()

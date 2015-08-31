@@ -71,7 +71,7 @@ static void usart_setup(void)
      gpio_set_af(GPIOA, GPIO_AF7, GPIO2 | GPIO3);
      
      /* Setup UART parameters. */
-     usart_set_baudrate(USART2, 115200);
+     usart_set_baudrate(USART2, 1152000);
      usart_set_databits(USART2, 8);
      usart_set_stopbits(USART2, USART_STOPBITS_1);
      usart_set_mode(USART2, USART_MODE_TX_RX);
@@ -119,31 +119,6 @@ static void my_usart_print_int(uint32_t usart, int16_t value)
      
      usart_send_blocking(usart, '\r');
      usart_send_blocking(usart, '\n');
-}
-
-static void my_usart_print_vals(uint32_t usart, int32_t value)
-{
-     int8_t i;
-     int8_t nr_digits = 0;
-     char buffer[25];
-     
-     if (value < 0) {
-	  usart_send_blocking(usart, '-');
-	  value = value * -1;
-     }
-     
-     if (value == 0) {
-	  usart_send_blocking(usart, '0');
-     }
-     
-     while (value > 0) {
-	  buffer[nr_digits++] = "0123456789"[value % 10];
-	  value /= 10;
-     }
-     
-     for (i = nr_digits-1; i >= 0; i--) {
-	  usart_send_blocking(usart, buffer[i]);
-     }
 }
 
 static void clock_setup(void)
@@ -207,7 +182,8 @@ int main(int argc, char *argv[])
 	  while (!(adc_eoc(ADC1)));
 	  temp=adc_read_regular(ADC1);
 	  //gpio_port_write(GPIOE, temp << 4);
-	  my_usart_print_int(USART2, temp);
+	  usart_send_blocking(USART2, (uint8_t)(temp & 0xff));
+	  usart_send_blocking(USART2, (uint8_t)((temp & 0xff00) >> 8));
      }
      
      return 0;

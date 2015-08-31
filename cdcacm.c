@@ -1,4 +1,3 @@
-
 /*
  * This file is part of the libopencm3 project.
  *
@@ -84,7 +83,7 @@ static const struct {
 		.bcdCDC = 0x0110,
 	},
 	.call_mgmt = {
-		.bFunctionLength = 
+		.bFunctionLength =
 			sizeof(struct usb_cdc_call_management_descriptor),
 		.bDescriptorType = CS_INTERFACE,
 		.bDescriptorSubtype = USB_CDC_TYPE_CALL_MANAGEMENT,
@@ -102,8 +101,8 @@ static const struct {
 		.bDescriptorType = CS_INTERFACE,
 		.bDescriptorSubtype = USB_CDC_TYPE_UNION,
 		.bControlInterface = 0,
-		.bSubordinateInterface0 = 1, 
-	 }
+		.bSubordinateInterface0 = 1,
+	 },
 };
 
 static const struct usb_interface_descriptor comm_iface[] = {{
@@ -120,7 +119,7 @@ static const struct usb_interface_descriptor comm_iface[] = {{
 	.endpoint = comm_endp,
 
 	.extra = &cdcacm_functional_descriptors,
-	.extralen = sizeof(cdcacm_functional_descriptors)
+	.extralen = sizeof(cdcacm_functional_descriptors),
 }};
 
 static const struct usb_interface_descriptor data_iface[] = {{
@@ -174,7 +173,7 @@ static int cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *
 	(void)buf;
 	(void)usbd_dev;
 
-	switch(req->bRequest) {
+	switch (req->bRequest) {
 	case USB_CDC_REQ_SET_CONTROL_LINE_STATE: {
 		/*
 		 * This Linux cdc_acm driver requires this to be implemented
@@ -195,10 +194,9 @@ static int cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *
 		// usbd_ep_write_packet(0x83, buf, 10);
 		return 1;
 		}
-	case USB_CDC_REQ_SET_LINE_CODING: 
-		if(*len < sizeof(struct usb_cdc_line_coding))
+	case USB_CDC_REQ_SET_LINE_CODING:
+		if (*len < sizeof(struct usb_cdc_line_coding))
 			return 0;
-
 		return 1;
 	}
 	return 0;
@@ -207,6 +205,7 @@ static int cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *
 static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 {
 	(void)ep;
+	(void)usbd_dev;
 
 	char buf[64];
 	int len = usbd_ep_read_packet(usbd_dev, 0x01, buf, 64);
@@ -220,6 +219,7 @@ static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 {
 	(void)wValue;
+	(void)usbd_dev;
 
 	usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64, cdcacm_data_rx_cb);
 	usbd_ep_setup(usbd_dev, 0x82, USB_ENDPOINT_ATTR_BULK, 64, NULL);
@@ -232,25 +232,34 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 				cdcacm_control_request);
 }
 
+
+static void usb_setup(void)
+{
+	/* Enable clocks for GPIO port A (for GPIO_USART2_TX) and USART2. */
+	rcc_usb_prescale_1();
+	rcc_periph_clock_enable(RCC_USB);
+	rcc_periph_clock_enable(RCC_GPIOA);
+
+	/* Setup GPIO pin GPIO_USART2_TX/GPIO9 on GPIO port A for transmit. */
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11 | GPIO12);
+	gpio_set_af(GPIOA, GPIO_AF14, GPIO11| GPIO12);
+}
+
 int main(void)
 {
+	int i;
+
 	usbd_device *usbd_dev;
 
-	rcc_clock_setup_in_hsi_out_48mhz();
+	rcc_clock_setup_hsi(&hsi_8mhz[CLOCK_48MHZ]);
+	usb_setup();
 
-	rcc_periph_clock_enable(RCC_GPIOA);
-	rcc_periph_clock_enable(RCC_AFIO);
-
-	AFIO_MAPR |= AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON;
-
-	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, 0, GPIO15);
-
-	usbd_dev = usbd_init(&stm32f103_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
+	usbd_dev = usbd_init(&stm32f103_usb_driver, &dev, &config, usb_strings,
+			3, usbd_control_buffer, sizeof(usbd_control_buffer));
 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
 
-	gpio_set(GPIOA, GPIO15);
-	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO15);
+	for (i = 0; i < 0x800000; i++)
+		__asm__("nop");
 
 	while (1)
 		usbd_poll(usbd_dev);

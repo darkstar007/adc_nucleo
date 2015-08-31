@@ -29,60 +29,6 @@
 volatile int32_t total = 0;
 volatile int32_t count = 0;
 
-void tim1_cc_isr(void)
-{
-     static int32_t last_value = 0;
-     int32_t value;
-     if (timer_get_flag(TIM1, TIM_SR_CC1IF) != 0) {
-	  // Timer channel 1 interrupt -> First edge (outcoming signal).
-	  timer_clear_flag(TIM1, TIM_SR_CC1IF);
-	  //value = timer_get_counter(TIM1);
-	  
-	  //if (count) {
-	  //     total += (value - last_value);
-	  //}
-	  count++;
-	  //last_value = value;
-	  
-     }
-}
-
-static void tim1_setup_input_capture(void)
-{
-     // Enable clock for Timer 1.
-     rcc_periph_clock_enable(RCC_TIM1);
-     
-     // Configure TIM1_CH1  as inputs.
-     gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
-
-     gpio_set_af(GPIOA, GPIO_AF6, GPIO8);
-     
-     // Enable interrupts for TIM1 CC.	
-     nvic_enable_irq        (NVIC_TIM1_CC_IRQ);
-     
-     timer_set_mode(TIM1,
-		    TIM_CR1_CKD_CK_INT, // Internal 72 MHz clock
-		    TIM_CR1_CMS_EDGE,   // Edge synchronization
-		    TIM_CR1_DIR_UP);    // Upward counter
-     
-     timer_set_prescaler     (TIM1, 1);  // Counter unit = 1 us.
-     timer_set_period        (TIM1, 0xFFFF);
-     timer_set_repetition_counter(TIM1, 0);
-     timer_continuous_mode   (TIM1);
-     
-     // Configure channel 1
-     timer_ic_set_input     (TIM1, TIM_IC1, TIM_IC_IN_TI1);
-     timer_ic_set_filter    (TIM1, TIM_IC1, TIM_IC_OFF);
-     timer_ic_set_polarity  (TIM1, TIM_IC1, TIM_IC_RISING);
-     timer_ic_set_prescaler (TIM1, TIM_IC1, TIM_IC_PSC_OFF);
-     timer_ic_enable        (TIM1, TIM_IC1);
-     timer_clear_flag       (TIM1, TIM_SR_CC1IF);
-     timer_enable_irq       (TIM1, TIM_DIER_CC1IE);
-     
-     timer_enable_counter   (TIM1);
-
-}
-
 static void adc_setup(void)
 {
      //ADC
@@ -211,13 +157,13 @@ void tim3_isr(void)
 	  timer_clear_flag(TIM3, TIM_SR_CC1IF);
      
 	  gpio_toggle(GPIOA, GPIO5);	/* LED on/off */
-	  my_usart_print_vals(USART2, total);
-	  usart_send_blocking(USART2, ',');
-	  my_usart_print_vals(USART2, count);
-	  count=0;
+	  //my_usart_print_vals(USART2, total);
+	  //usart_send_blocking(USART2, ',');
+	  //my_usart_print_vals(USART2, count);
+	  //count=0;
 	  //total=0;
-	  usart_send_blocking(USART2, '\r');
-	  usart_send_blocking(USART2, '\n');
+	  //usart_send_blocking(USART2, '\r');
+	  //usart_send_blocking(USART2, '\n');
      }
 
 }
@@ -248,19 +194,15 @@ static void tim3_1s(void)
 int main(int argc, char *argv[])
 {
      
-     int i;
-     
      clock_setup();
      gpio_setup();
      adc_setup();
      usart_setup();
-     tim1_setup_input_capture();
+     //tim1_setup_input_capture();
      tim3_1s();
 
-#ifdef ADC
      uint16_t temp = 0;	
      while (1) {
-	  gpio_toggle(GPIOA, GPIO5);	/* LED on/off */
 	  adc_start_conversion_regular(ADC1);
 	  while (!(adc_eoc(ADC1)));
 	  temp=adc_read_regular(ADC1);
@@ -268,23 +210,6 @@ int main(int argc, char *argv[])
 	  my_usart_print_int(USART2, temp);
      }
      
-     while (1) {
-	  gpio_toggle(GPIOA, GPIO5);	/* LED on/off */
-	  for (i = 0; i < 16000000; i++)
-	       __asm__("nop");
-	  my_usart_print_vals(USART2, total);
-	  usart_send_blocking(USART2, ',');
-	  my_usart_print_vals(USART2, count);
-	  count=0;
-	  //total=0;
-	  usart_send_blocking(USART2, '\r');
-	  usart_send_blocking(USART2, '\n');
-     }
-#endif
-
-     while (1) {
-     }
-
      return 0;
 }
 
